@@ -50,50 +50,6 @@ def trust_receive(request):
 
     return HttpResponseForbidden()
 
-@require_http_methods(["GET"])
-def send_create(request):
-    initial = request.GET.get('start')
-    token = request.GET.get('token')
-
-    data = requests.get(initial + f"/api/newcompany?token={token}")
-    response = data.json()
-
-    myToken = response[0]
-    companiesToContact = response[1]
-
-    self = Self.objects.all()
-    serializedself = serialize('json', self)
-    for i in companiesToContact:
-        new = Company(**i)
-        new.save()
-
-    postdata = {"companies": companiesToContact, "token": myToken}
-
-    added = False
-    additional = {}
-
-    for i in companiesToContact:
-        resdata = requests.post(i.ip + "/api/createcompany", data=postdata).json()
-        for i in resdata['companies']:
-            added = True
-            if i not in additional:
-                additional[i] = resdata['companies'][i]
-
-    while added == True:
-        for i in additional:
-            new = Company(**i)
-            new.save()
-
-        additional = {}
-
-        added = False
-        for x in additional:
-            resdata = requests.post(x[ip] + "/api/createcompany", data=postdata).json()
-            for i in resdata['companies']:
-                added = True
-                if i not in additional:
-                    additional[i] = resdata['companies'][i]
-
 @require_http_methods(["POST"])
 def diff_and_create(request):
     companylist = json.loads(request.POST['company'])
@@ -107,4 +63,11 @@ def diff_and_create(request):
                 toadd.append(i)
 
         return SendNotifications(HttpResponse(f"[\"{uid}\",{serialize('json', toadd)}]", content_type='application/json'), request.POST['token'], toadd)
+
+@require_http_methods(["GET"])
+def get_products(request):
+    self = Self.objects.all()
+    products = Product.objects.filter(manufacturer=self)
+
+    return HttpResponse(serialize('json', products))
 

@@ -10,6 +10,7 @@ class Company(models.Model):
     identity = models.CharField(max_length=32) # hexdigest of md5 name + ip
 
 class Product(models.Model):
+    productImage = models.CharField(max_length=1000)
     productName = models.CharField(max_length=100)
     productTags = models.CharField(max_length=300)
     manufacturer = models.ForeignKey(Company, on_delete=models.CASCADE)

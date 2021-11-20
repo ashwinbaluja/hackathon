@@ -26,3 +26,58 @@ def create_self(request):
 
     self = Company(company=newcompany)
     self.save()
+
+@require_http_methods(["GET"])
+def send_create(request):
+    initial = request.GET.get('start')
+    token = request.GET.get('token')
+
+    data = requests.get(initial + f"/api/newcompany?token={token}")
+    response = data.json()
+
+    myToken = response[0]
+    companiesToContact = response[1]
+
+    self = Self.objects.all()
+    serializedself = serialize('json', self)
+    for i in companiesToContact:
+        new = Company(**i)
+        new.save()
+
+    postdata = {"companies": companiesToContact, "token": myToken}
+
+    added = False
+    additional = {}
+
+    for i in companiesToContact:
+        resdata = requests.post(i.ip + "/api/createcompany", data=postdata).json()
+        for i in resdata['companies']:
+            added = True
+            if i not in additional:
+                additional[i] = resdata['companies'][i]
+
+    while added == True:
+        for i in additional:
+            new = Company(**i)
+            new.save()
+
+        additional = {}
+
+        added = False
+        for x in additional:
+            resdata = requests.post(x[ip] + "/api/createcompany", data=postdata).json()
+            for i in resdata['companies']:
+                added = True
+                if i not in additional:
+                    additional[i] = resdata['companies'][i]
+
+    selfCategory = self.companyCategory
+    sameCategory = Company.objects.filter(companyCategory=selfCategory)
+
+    for i in sameCategory: 
+        products = requests.get(i.ip + "/api/products/").json()
+        for x in products:
+            new = Product(**x)
+            new.save()
+
+
