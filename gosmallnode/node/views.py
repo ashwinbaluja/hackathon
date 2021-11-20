@@ -51,6 +51,19 @@ def trust_receive(request):
     return HttpResponseForbidden()
 
 @require_http_methods(["POST"])
+def fix_missing(request):
+    companylist = json.loads(request.POST['company'])
+    if cache.get(request.POST['token']) != None:
+
+        for i in companylist:
+            new = Company(**companylist[i])
+            new.save()
+
+        return HttpResponse(status_code=200)
+        
+    return HttpResponse(status_code=403)
+
+@require_http_methods(["POST"])
 def diff_and_create(request):
     companylist = json.loads(request.POST['company'])
 
