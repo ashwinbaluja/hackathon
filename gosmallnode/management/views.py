@@ -20,14 +20,16 @@ def create_self(request):
     name = request.GET['name']
     ip = request.GET['ip']
     tohash = name + ip
-    hashed = hashlib.md5(tohash)
-    fromobj = Category.objects.filter(categoryName=request.GET['category'])
+    hashed = hashlib.md5(bytes(tohash, encoding="utf8"))
+    fromobj = Category.objects.filter(categoryName=request.GET['category'])[0]
 
     newcompany = Company(companyName=name, companyCategory=fromobj, ip=ip, identity=hashed.hexdigest())
     newcompany.save()
 
-    self = Company(company=newcompany)
+    self = Self(company=newcompany)
     self.save()
+
+    return HttpResponse(status=200)
 
 @require_http_methods(["POST"])
 def create_product(request):
@@ -37,13 +39,13 @@ def create_product(request):
     self = Self.objects.all()[0].company
     new = Product(productImage=self.ip + "/static/" + filename, productName=request.POST['name'], productTags=request.POST['tags'], manufacturer=self)
     new.save()
-    
+
 @require_http_methods(["GET"])
 def send_create(request):
     initial = request.GET.get('start')
     token = request.GET.get('token')
 
-    data = requests.get(initial + f"/api/newcompany?token={token}")
+    data = requests.get("http://" + initial + f"/api/newcompany?token={token}")
     response = data.json()
 
     myToken = response[0]

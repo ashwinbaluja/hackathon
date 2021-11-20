@@ -21,13 +21,14 @@ class SendNotifications(HttpResponse):
     def close(self):
         super().close()
         print(self.token)
-        selfid = Self.objects.all()
+        selfobj = Self.objects.all()[0].company
         for i in self.companies:
-            requests.get(i.ip + f"/api/preparereceive?token={self.token}&selfname={selfobj.companyName}&selfidentity={selfobj.identity}")
+            requests.get("http://" + i.ip + f"/api/preparereceive?token={self.token}&selfname={selfobj.companyName}&selfidentity={selfobj.identity}")
 
 @require_http_methods(["GET"])
 def receive_create(request): 
     token = request.GET.get('token')
+    print(token, CreationCodes.objects.all())
     if CreationCodes.objects.filter(code=token).exists():
         allCompanies = Company.objects.all()
         uid = str(uuid.uuid4())
@@ -60,7 +61,7 @@ def fix_missing(request):
             new.save()
 
         return HttpResponse(status_code=200)
-        
+
     return HttpResponse(status_code=403)
 
 @require_http_methods(["POST"])
